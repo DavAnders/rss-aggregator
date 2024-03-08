@@ -2,12 +2,14 @@ package config
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
 func RespondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
+		log.Printf("Failed to marshal JSON response: %V", payload)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("HTTP 500: Internal Server Error"))
 		return

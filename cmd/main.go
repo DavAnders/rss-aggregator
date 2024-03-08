@@ -33,15 +33,12 @@ func main() {
 		Addr:    ":" + port,
 	}
 
-	router.Get("/v1/readiness", func(w http.ResponseWriter, r *http.Request) {
-		config.RespondWithJSON(w, http.StatusAccepted, map[string]interface{}{
-			"status": "ok",
-		})
-	})
+	v1Router := chi.NewRouter()
 
-	router.Get("/v1/err", func(w http.ResponseWriter, r *http.Request) {
-		config.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-	})
+	v1Router.HandleFunc("/readiness", config.HandlerReadiness)
+	v1Router.HandleFunc("/err", config.HandlerErr)
+
+	router.Mount("/v1", v1Router)
 
 	log.Printf("Server starting on port %v", port)
 	log.Fatal(srv.ListenAndServe())
