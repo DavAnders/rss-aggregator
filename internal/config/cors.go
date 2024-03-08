@@ -1,8 +1,8 @@
-package main
+package config
 
 import "net/http"
 
-func corsMiddleware(next http.Handler) http.Handler {
+func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set headers
 		w.Header().Set("Access-Control-Allow-Origin", "*")                                // Allow any origin
@@ -21,7 +21,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func mainHandler(w http.ResponseWriter, r *http.Request) {
+func MainHandler(w http.ResponseWriter, r *http.Request) {
 	// main logic here
 	w.Write([]byte("Main handler"))
 }
