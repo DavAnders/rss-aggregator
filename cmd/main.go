@@ -56,6 +56,7 @@ func main() {
 	v1Router.HandleFunc("/readiness", config.HandlerReadiness)
 	v1Router.HandleFunc("/err", config.HandlerErr)
 	v1Router.Post("/feeds", cfg.MiddlewareAuth(cfg.CreateFeedHandler))
+	v1Router.Get("/feeds", cfg.GetFeedsHandler())
 
 	router.Mount("/v1", v1Router)
 

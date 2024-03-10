@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DavAnders/rss-aggregator/internal/database"
+	"github.com/google/uuid"
 )
 
 func (cfg *ApiConfig) CreateFeedHandler(w http.ResponseWriter, r *http.Request, user database.User) {
@@ -20,12 +21,10 @@ func (cfg *ApiConfig) CreateFeedHandler(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	createdAt := time.Now()
-	updatedAt := createdAt
-
 	feed, err := cfg.DB.CreateFeed(r.Context(), database.CreateFeedParams{
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Name:      req.Name,
 		Url:       req.Url,
 		UserID:    user.ID,
@@ -37,5 +36,21 @@ func (cfg *ApiConfig) CreateFeedHandler(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	RespondWithJSON(w, http.StatusOK, feed)
+	RespondWithJSON(w, http.StatusOK, databaseFeedToFeed(feed))
+}
+
+func (cfg *ApiConfig) GetFeedsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			RespondWithError(w, http.StatusMethodNotAllowed, "Only GET method is allowed")
+			return
+		}
+
+		feeds, err := cfg.DB.GetAllFeeds(r.Context())
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to fetch feed")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, feeds)
+	}
 }

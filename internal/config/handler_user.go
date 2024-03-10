@@ -25,7 +25,7 @@ func (cfg *ApiConfig) CreateUserHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Only allow POST method
 		if r.Method != http.MethodPost {
-			http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+			RespondWithError(w, http.StatusMethodNotAllowed, "Only POST method is allowed")
 			return
 		}
 
@@ -33,7 +33,7 @@ func (cfg *ApiConfig) CreateUserHandler() http.HandlerFunc {
 			Name string `json:"name"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Error reading request body", http.StatusBadRequest)
+			RespondWithError(w, http.StatusBadRequest, "Error reading request body")
 			return
 		}
 
@@ -48,13 +48,11 @@ func (cfg *ApiConfig) CreateUserHandler() http.HandlerFunc {
 			Name:      req.Name,
 		})
 		if err != nil {
-			http.Error(w, "Error creating user", http.StatusInternalServerError)
+			RespondWithError(w, http.StatusInternalServerError, "Error creating user")
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(user); err != nil {
-			http.Error(w, "Error writing response", http.StatusInternalServerError)
-		}
+		RespondWithJSON(w, http.StatusOK, databaseUserToUser(user))
 	}
+
 }
