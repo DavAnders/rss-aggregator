@@ -52,9 +52,10 @@ func main() {
 
 	v1Router := chi.NewRouter()
 	v1Router.Post("/users", cfg.CreateUserHandler())
-	v1Router.Get("/users", cfg.GetUserHandler())
+	v1Router.Get("/users", cfg.MiddlewareAuth(cfg.GetUserHandler))
 	v1Router.HandleFunc("/readiness", config.HandlerReadiness)
 	v1Router.HandleFunc("/err", config.HandlerErr)
+	v1Router.Post("/feeds", cfg.MiddlewareAuth(cfg.CreateFeedHandler))
 
 	router.Mount("/v1", v1Router)
 
