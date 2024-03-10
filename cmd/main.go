@@ -52,6 +52,7 @@ func main() {
 
 	v1Router := chi.NewRouter()
 	v1Router.Post("/users", cfg.CreateUserHandler())
+	v1Router.Get("/users", cfg.GetUserHandler())
 	v1Router.HandleFunc("/readiness", config.HandlerReadiness)
 	v1Router.HandleFunc("/err", config.HandlerErr)
 

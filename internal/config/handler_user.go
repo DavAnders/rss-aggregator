@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/DavAnders/rss-aggregator/internal/database"
@@ -11,6 +12,31 @@ import (
 
 type ApiConfig struct {
 	DB *database.Queries
+}
+
+func (cfg *ApiConfig) GetUserHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			RespondWithError(w, http.StatusMethodNotAllowed, "Only GET method is allowed")
+			return
+		}
+
+		authHeader := r.Header.Get("Authorization")
+		if !strings.HasPrefix(authHeader, "ApiKey ") {
+			RespondWithError(w, http.StatusBadRequest, "Invalid Authorization header")
+			return
+		}
+
+		apiKey := strings.TrimPrefix(authHeader, "ApiKey ")
+
+		user, err := cfg.DB.GetUser(r.Context(), apiKey)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Error fetching user")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, user)
+	}
 }
 
 func (cfg *ApiConfig) CreateUserHandler() http.HandlerFunc {
