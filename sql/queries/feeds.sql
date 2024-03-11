@@ -8,3 +8,14 @@ SELECT id, created_at, updated_at, name, url, user_id FROM feeds;
 
 -- name: DeleteFeed :exec
 DELETE FROM feeds WHERE id = $1;
+
+-- name: GetNextFeedsToFetch :many
+SELECT * FROM feeds
+ORDER BY last_fetched_at IS NULL DESC, last_fetched_at
+LIMIT $1;
+
+-- name: MarkFeedFetched :exec
+UPDATE feeds
+SET last_fetched_at = NOW(), updated_at = NOW()
+WHERE id = $1;
+
