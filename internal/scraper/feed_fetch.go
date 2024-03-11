@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/DavAnders/rss-aggregator/internal/database"
+	"github.com/google/uuid"
 )
 
 func FetchRSSFeed(url string) (*RSS, error) {
@@ -48,18 +49,26 @@ func fetchAndProcessFeed(ctx context.Context, feed database.Feed, queries *datab
 	}
 
 	for _, item := range feedData.Channel.Items {
-		publishedAt, err := time.Parse(time.RFC1123, item.PubDate)
-		if err != nil {
-			log.Printf("Error parsing published date for item: '%s': %v", item.Title, err)
+		var parsedTime time.Time
+		var parseErr error
+		for _, layout := range []string{time.RFC1123, time.RFC1123Z, "2006-01-02T15:04:05Z07:00"} {
+			parsedTime, parseErr = time.Parse(layout, item.PubDate)
+			if parseErr == nil {
+				break
+			}
+		}
+		if parseErr != nil {
+			log.Printf("Error parsing published date for item: '%s': %v", item.Title, parseErr)
 			continue
 		}
 		err = queries.CreatePost(ctx, database.CreatePostParams{
+			ID:          uuid.New(),
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 			Title:       item.Title,
 			Url:         item.Link,
 			Description: sql.NullString{String: item.Description, Valid: true},
-			PublishedAt: publishedAt,
+			PublishedAt: parsedTime,
 			FeedID:      feed.ID,
 		})
 		if err != nil {
@@ -67,7 +76,7 @@ func fetchAndProcessFeed(ctx context.Context, feed database.Feed, queries *datab
 			continue
 		}
 	}
-
+	// marks as fetched whether saved to db or not. could add more granular control over this later
 	err = queries.MarkFeedFetched(ctx, feed.ID)
 	if err != nil {
 		log.Printf("Error marking feed as fetched %d: %v", feed.ID, err)

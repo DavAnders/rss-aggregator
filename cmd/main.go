@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 
 	"github.com/DavAnders/rss-aggregator/internal/config"
 	"github.com/DavAnders/rss-aggregator/internal/database"
+	"github.com/DavAnders/rss-aggregator/internal/scraper"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 )
@@ -33,6 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
+	defer db.Close()
 	dbQueries := database.New(db)
 
 	cfg := &config.ApiConfig{
@@ -44,6 +48,12 @@ func main() {
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		config.MainHandler(w, r)
 	})
+
+	// scraper
+	ctx := context.Background()
+	interval := 60 * time.Second // Customize as needed
+	batchSize := int32(10)       // Customize as needed
+	go scraper.Worker(ctx, interval, batchSize, dbQueries)
 
 	srv := &http.Server{
 		Handler: router,
@@ -60,6 +70,7 @@ func main() {
 	v1Router.Post("/feed_follows", cfg.MiddlewareAuth(cfg.CreateFeedFollowHandler))
 	v1Router.Get("/feed_follows", cfg.MiddlewareAuth(cfg.GetFeedFollowsHandler))
 	v1Router.Delete("/feed_follows/{feedFollowID}", cfg.MiddlewareAuth(cfg.DeleteFeedFollowHandler))
+	v1Router.Get("/posts", cfg.MiddlewareAuth(cfg.GetPostsByUser))
 
 	router.Mount("/v1", v1Router)
 

@@ -1,6 +1,6 @@
 -- name: CreatePost :exec
-INSERT INTO posts (created_at, updated_at, title, url, description, published_at, feed_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO posts (id, created_at, updated_at, title, url, description, published_at, feed_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (url) DO UPDATE 
 SET title = EXCLUDED.title,
     description = EXCLUDED.description,
