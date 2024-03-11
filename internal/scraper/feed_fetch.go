@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -47,7 +48,24 @@ func fetchAndProcessFeed(ctx context.Context, feed database.Feed, queries *datab
 	}
 
 	for _, item := range feedData.Channel.Items {
-		fmt.Printf("Feed: %s, Item: %s\n", feed.Name, item.Title)
+		publishedAt, err := time.Parse(time.RFC1123, item.PubDate)
+		if err != nil {
+			log.Printf("Error parsing published date for item: '%s': %v", item.Title, err)
+			continue
+		}
+		err = queries.CreatePost(ctx, database.CreatePostParams{
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: sql.NullString{String: item.Description, Valid: true},
+			PublishedAt: publishedAt,
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			log.Printf("Failed to save post '%s': %v", item.Title, err)
+			continue
+		}
 	}
 
 	err = queries.MarkFeedFetched(ctx, feed.ID)
