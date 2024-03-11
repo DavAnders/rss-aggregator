@@ -57,6 +57,9 @@ func main() {
 	v1Router.HandleFunc("/err", config.HandlerErr)
 	v1Router.Post("/feeds", cfg.MiddlewareAuth(cfg.CreateFeedHandler))
 	v1Router.Get("/feeds", cfg.GetFeedsHandler())
+	v1Router.Post("/feed_follows", cfg.MiddlewareAuth(cfg.CreateFeedFollowHandler))
+	v1Router.Get("/feed_follows", cfg.MiddlewareAuth(cfg.GetFeedFollowsHandler))
+	v1Router.Delete("/feed_follows/{feedFollowID}", cfg.MiddlewareAuth(cfg.DeleteFeedFollowHandler))
 
 	router.Mount("/v1", v1Router)
 

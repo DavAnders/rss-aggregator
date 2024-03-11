@@ -5,3 +5,6 @@ RETURNING *;
 
 -- name: GetAllFeeds :many
 SELECT id, created_at, updated_at, name, url, user_id FROM feeds;
+
+-- name: DeleteFeed :exec
+DELETE FROM feeds WHERE id = $1;

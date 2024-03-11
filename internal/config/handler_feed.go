@@ -36,7 +36,33 @@ func (cfg *ApiConfig) CreateFeedHandler(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	RespondWithJSON(w, http.StatusOK, databaseFeedToFeed(feed))
+	feedFollow, err := cfg.DB.CreateFeedFollow(r.Context(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		FeedID:    feed.ID,
+		UserID:    user.ID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		log.Printf("Failed to create feed follow: %v", err)
+		feederr := cfg.DB.DeleteFeed(r.Context(), feed.ID)
+		if feederr != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to delete feed")
+			return
+		}
+		RespondWithError(w, http.StatusInternalServerError, "Failed to create feed follow")
+		return
+	}
+
+	response := struct {
+		Feed       Feed       `json:"feed"`
+		FeedFollow FeedFollow `json:"feed_follow"`
+	}{
+		Feed:       databaseFeedToFeed(feed),
+		FeedFollow: databaseFeedFollowToFeedFollow(feedFollow),
+	}
+
+	RespondWithJSON(w, http.StatusOK, response)
 }
 
 func (cfg *ApiConfig) GetFeedsHandler() http.HandlerFunc {
